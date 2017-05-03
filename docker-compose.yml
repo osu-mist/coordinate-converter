@@ -14,4 +14,5 @@ services:
       - URL
     volumes:
       - $PWD:/tmp
-    command: /tmp/coordinate-converter "$URL" "/tmp/converted-coordinates.json"
+    working_dir: /tmp
+    command: /tmp/coordinate-converter -u "$URL"

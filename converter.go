@@ -10,6 +10,7 @@ import (
         "strings"
         "os"
         "fmt"
+        "flag"
     )
 /*
 Represents a subset of fields from an ARCGIS API response.
@@ -24,6 +25,27 @@ type Buildings struct {
             Rings [][][]float64 `json:"rings"`
         } `json:"geometry"`
     } `json:"features"`
+}
+
+/*
+Make http request and unmarshals json respones into Buildings struct
+*/
+func getBuildings(url string) (Buildings) {
+    // Make http request to ARCGIS API
+    res, err := http.Get(url)
+    check(err)
+
+    // Read body of API response
+    body, err := ioutil.ReadAll(res.Body)
+    res.Body.Close()
+    check(err)
+
+    // Unmarshal json into buildings struct
+    var buildings Buildings
+    err = json.Unmarshal(body, &buildings)
+    check(err)
+
+    return buildings
 }
 
 /*
@@ -60,27 +82,10 @@ func convertCoordinates(lon, lat float64) (float64, float64) {
     return convertedLon, convertedLat
 }
 
-func main() {
-    if len(os.Args) < 3 {
-        panic("Not enough arguments. Usage: ./converter $URL $FILEPATH")
-    }
-    
-    url := os.Args[1]
-    filePath := os.Args[2]
-
-    // Make http request to ARCGIS API
-    res, err := http.Get(url)
-    check(err)
-
-    // Read body of API response
-    body, err := ioutil.ReadAll(res.Body)
-    res.Body.Close()
-    check(err)
-
-    // Unmarshal json into buildings struct
-    var buildings Buildings
-    json.Unmarshal(body, &buildings)
-
+/*
+Iterate over each coordinate and reassign coordinates to converted values
+*/
+func coordinateIterator(buildings *Buildings) {
     // Iterate over each coordinate pair and convert coordinates using convertCoordinates()
     for featureIndex, building := range buildings.Features {
         fmt.Println("Converting building", building.Attributes.BldNam)
@@ -94,7 +99,12 @@ func main() {
             }
         }
     }
-    // Marshal buildings struct back into json
+}
+
+/*
+Marshal buildings struct to json and write to file
+*/
+func writeBuildingstoJson(buildings *Buildings, filePath string) {
     convertedJson, err := json.Marshal(buildings)
     check(err)
 
@@ -107,4 +117,21 @@ func main() {
     // Write pretty json to file
     err = ioutil.WriteFile(filePath, prettyJson.Bytes(), 0644)
     check(err)
+}
+
+func main() {
+    url := flag.String("u", "", "URL of ARCGIS json endpoint")
+    filePath := flag.String("f", "converted-coordinates.json", "Filepath of json output file. Example: \"/directory/file.json\"")
+    flag.Parse()
+
+    if *url == "" {
+        fmt.Println("No url specified. Use the \"-u\" flag to specify an ARCGIS Json url")
+        os.Exit(1)
+    }
+
+    buildings := getBuildings(*url)
+  
+    coordinateIterator(&buildings)
+
+    writeBuildingstoJson(&buildings, *filePath)
 }
