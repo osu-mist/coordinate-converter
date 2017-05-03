@@ -4,12 +4,15 @@ Coordinate Converter is used to convert coordinates from a JSON http response. S
 ## Usage
 
 ### Run It Locally
-This program requires [CS2CS](http://proj4.org/apps/cs2cs.html) and [Golang](https://golang.org) to run locally.
+This program requires [CS2CS](http://proj4.org/apps/cs2cs.html) and [Golang](https://golang.org) to run locally. 
 ```
 go install
+# URL of ARCGIS Json endpoint. Required
 URL="www.example.com/arcgisjsonendpoint"
+
+# Path to json output file. If no file path is provided, path will be $PWD/converted-coordinates.json
 FILEPATH="/path/to/desired/output.json"
-coordinate-converter "$URL" "$FILEPATH"
+coordinate-converter -u "$URL" [-f "$FILEPATH"]
 ```
 
 ### Run It in Docker
