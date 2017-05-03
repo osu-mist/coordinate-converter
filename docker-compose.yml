@@ -1,0 +1,17 @@
+version: '3.1'
+services:
+  go:
+    image: "golang:1.8.1"
+    volumes:
+      - $PWD:/usr/src/github.com/osu-mist/coordinate-converter
+    working_dir: /usr/src/github.com/osu-mist/coordinate-converter
+    command: go build -v
+  cs2cs:
+    image: "osgeo/proj.4"
+    depends_on:
+      - go
+    environment:
+      - URL
+    volumes:
+      - $PWD:/tmp
+    command: /tmp/coordinate-converter "$URL" "/tmp/converted-coordinates.json"
