@@ -13,14 +13,8 @@ coordinate-converter "$URL" "$FILEPATH"
 ```
 
 ### Run It in Docker
-Included is a [Dockerfile](Dockerfile) that contains a runtime environment for [CS2CS](http://proj4.org/apps/cs2cs.html) and [Golang](https://golang.org).
+Included is a [docker-compose file](docker-compose.yml) that starts containers for [CS2CS](http://proj4.org/apps/cs2cs.html) and [Golang](https://golang.org) to build the executable. A file called converted-coordinates.json will be created in $PWD when running this command:
 ```
-docker build -t coordinate-converter .
-URL="www.example.com/arcgisjsonendpoint"
-FILEPATH="/path/to/desired/output.json"
-docker run --rm \
-    -v "$FILEPATH":"$FILEPATH" \
-    -e "FILEPATH=$FILEPATH" \
-    -e "URL=$URL" \
-    coordinate-converter
+export URL='www.example.com/arcgisjsonendpoint'
+docker-compose up
 ```
