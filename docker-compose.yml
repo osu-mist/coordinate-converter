@@ -15,4 +15,4 @@ services:
     volumes:
       - $PWD:/tmp
     working_dir: /tmp
-    command: /tmp/coordinate-converter -u "$URL"
+    command: sh -c /tmp/run.sh
