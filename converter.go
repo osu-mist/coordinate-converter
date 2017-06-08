@@ -11,6 +11,7 @@ import (
         "os"
         "fmt"
         "flag"
+        "github.com/paulmach/go.geojson"
     )
 /*
 Represents a subset of fields from an ARCGIS API response.
@@ -30,7 +31,7 @@ type Buildings struct {
 /*
 Make http request and unmarshals json respones into Buildings struct
 */
-func getBuildings(url string) (Buildings) {
+func getBuildings(url string) (*geojson.FeatureCollection, *geojson.FeatureCollection) {
     // Make http request to ARCGIS API
     res, err := http.Get(url)
     check(err)
@@ -41,11 +42,15 @@ func getBuildings(url string) (Buildings) {
     check(err)
 
     // Unmarshal json into buildings struct
-    var buildings Buildings
-    err = json.Unmarshal(body, &buildings)
+    buildings := geojson.NewFeatureCollection()
+    err = json.Unmarshal(body, buildings)
     check(err)
 
-    return buildings
+    convertedBuildings := geojson.NewFeatureCollection()
+    err = json.Unmarshal(body, convertedBuildings)
+    check(err)
+
+    return buildings, convertedBuildings
 }
 
 /*
@@ -85,18 +90,22 @@ func convertCoordinates(lon, lat float64) (float64, float64) {
 /*
 Iterate over each coordinate and reassign coordinates to converted values
 */
-func coordinateIterator(buildings *Buildings) {
+func coordinateIterator(buildings *geojson.FeatureCollection, convertedBuildings *geojson.FeatureCollection) {
     // Iterate over each coordinate pair and convert coordinates using convertCoordinates()
     for featureIndex, building := range buildings.Features {
-        fmt.Println("Converting building", building.Attributes.BldNam)
-        for ringIndex, ring := range building.Geometry.Rings {
-            for coordPairIndex, coordpair := range ring {
-                convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
+        fmt.Println("Converting building", building.Properties["BldNam"])
+        if building.Geometry.Type == "Polygon" {
+            for ringIndex, ring := range building.Geometry.Polygon {
+                for coordPairIndex, coordpair := range ring {
+                    convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
 
-                // Reassign coordinate values to the converted coordinates
-                buildings.Features[featureIndex].Geometry.Rings[ringIndex][coordPairIndex][0] = convertedLon
-                buildings.Features[featureIndex].Geometry.Rings[ringIndex][coordPairIndex][1] = convertedLat
+                    // Reassign coordinate values to the converted coordinates
+                    convertedBuildings.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring) - 1) - coordPairIndex][0] = convertedLon
+                    convertedBuildings.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring) - 1) - coordPairIndex][1] = convertedLat
+                }
             }
+        } else if building.Geometry.Type == "MultiPolygon" {
+            fmt.Println("Todo: Handle MultiPolygon")
         }
     }
 }
@@ -104,7 +113,7 @@ func coordinateIterator(buildings *Buildings) {
 /*
 Marshal buildings struct to json and write to file
 */
-func writeBuildingstoJson(buildings *Buildings, filePath string) {
+func writeBuildingstoJson(buildings *geojson.FeatureCollection, filePath string) {
     convertedJson, err := json.Marshal(buildings)
     check(err)
 
@@ -129,9 +138,9 @@ func main() {
         os.Exit(1)
     }
 
-    buildings := getBuildings(*url)
-  
-    coordinateIterator(&buildings)
+    buildings, convertedBuildings := getBuildings(*url)
 
-    writeBuildingstoJson(&buildings, *filePath)
+    coordinateIterator(buildings, convertedBuildings)
+
+    writeBuildingstoJson(convertedBuildings, *filePath)
 }

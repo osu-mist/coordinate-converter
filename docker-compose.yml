@@ -1,10 +1,12 @@
 version: '3.1'
+
 services:
   go:
-    image: "golang:1.8.1"
+    build: .
+    image: go-coordinate-converter
     volumes:
-      - $PWD:/usr/src/github.com/osu-mist/coordinate-converter
-    working_dir: /usr/src/github.com/osu-mist/coordinate-converter
+      - $PWD:/go/src/github.com/osu-mist/coordinate-converter
+    working_dir: /go/src/github.com/osu-mist/coordinate-converter
     command: go build -v
   cs2cs:
     image: "osgeo/proj.4"

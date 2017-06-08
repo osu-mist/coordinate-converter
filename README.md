@@ -19,5 +19,5 @@ coordinate-converter -u "$URL" [-f "$FILEPATH"]
 Included is a [docker-compose file](docker-compose.yml) that starts containers for [CS2CS](http://proj4.org/apps/cs2cs.html) and [Golang](https://golang.org) to build the executable. A file called converted-coordinates.json will be created in $PWD when running this command:
 ```
 export URL='www.example.com/arcgisjsonendpoint'
-docker-compose up
+docker-compose up --build
 ```
