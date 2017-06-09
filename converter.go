@@ -70,7 +70,7 @@ func convertCoordinates(lon, lat float64) (float64, float64) {
     lonStr := strconv.FormatFloat(lon, 'f', -1, 64)
     latStr := strconv.FormatFloat(lat, 'f', -1, 64)
 
-    cs2csCommand := "echo \"" + lonStr + " " + latStr + "\" | cs2cs -f %8.6f +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=10.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs +to +proj=longlat +datum=WGS84 +no_defs"
+    cs2csCommand := "echo \"" + lonStr + " " + latStr + "\" | cs2cs -f %8.6f +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs +to +proj=longlat +datum=WGS84 +no_defs"
     cmd := exec.Command("sh", "-c", cs2csCommand)
     stdoutStderr, err := cmd.CombinedOutput()
     check(err)
