@@ -105,7 +105,17 @@ func coordinateIterator(buildings *geojson.FeatureCollection, convertedBuildings
                 }
             }
         } else if building.Geometry.Type == "MultiPolygon" {
-            fmt.Println("Todo: Handle MultiPolygon")
+            for polygonIndex, polygon := range building.Geometry.MultiPolygon {
+                for ringIndex, ring := range polygon {
+                    for coordPairIndex, coordpair := range ring  {
+                        convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
+
+                        // Reassign coordinate values to the converted coordinates
+                        convertedBuildings.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring) - 1) - coordPairIndex][0] = convertedLon
+                        convertedBuildings.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring) - 1) - coordPairIndex][1] = convertedLat
+                    }
+                }
+            }
         }
     }
 }
