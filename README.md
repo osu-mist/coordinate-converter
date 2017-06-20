@@ -1,6 +1,10 @@
 # Coordinate Converter
 Coordinate Converter is used to convert coordinates from a JSON http response. Specfically, this program is used at OSU with ARCGIS to convert coordinates to latitude and longitude.
 
+### Dependencies
+
+* [github.com/paulmach/go.geojson](https://github.com/paulmach/go.geojson)
+
 ## Usage
 
 ### Run It Locally
@@ -19,5 +23,5 @@ coordinate-converter -u "$URL" [-f "$FILEPATH"]
 Included is a [docker-compose file](docker-compose.yml) that starts containers for [CS2CS](http://proj4.org/apps/cs2cs.html) and [Golang](https://golang.org) to build the executable. A file called converted-coordinates.json will be created in $PWD when running this command:
 ```
 export URL='www.example.com/arcgisjsonendpoint'
-docker-compose up
+docker-compose up --build
 ```
