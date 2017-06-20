@@ -3,7 +3,7 @@ Coordinate Converter is used to convert coordinates from a JSON http response. S
 
 ### Dependencies
 
-* github.com/paulmach/go.geojson
+* [github.com/paulmach/go.geojson](https://github.com/paulmach/go.geojson)
 
 ## Usage
 
