@@ -1,6 +1,10 @@
 # Coordinate Converter
 Coordinate Converter is used to convert coordinates from a JSON http response. Specfically, this program is used at OSU with ARCGIS to convert coordinates to latitude and longitude.
 
+### Dependencies
+
+* github.com/paulmach/go.geojson
+
 ## Usage
 
 ### Run It Locally
