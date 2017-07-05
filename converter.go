@@ -13,25 +13,11 @@ import (
         "flag"
         "github.com/paulmach/go.geojson"
     )
-/*
-Represents a subset of fields from an ARCGIS API response.
-*/
-type Buildings struct {
-    Features []struct {
-        Attributes struct {
-            BldID string `json:"BldID"`
-            BldNam string `json:"BldNam"`
-        } `json:"attributes"`
-        Geometry struct {
-            Rings [][][]float64 `json:"rings"`
-        } `json:"geometry"`
-    } `json:"features"`
-}
 
 /*
-Make http request and unmarshals json respones into Buildings struct
+Make http request and unmarshals json respones into Features struct
 */
-func getBuildings(url string) (*geojson.FeatureCollection, *geojson.FeatureCollection) {
+func getFeatures(url string) (*geojson.FeatureCollection, *geojson.FeatureCollection) {
     // Make http request to ARCGIS API
     res, err := http.Get(url)
     check(err)
@@ -41,16 +27,16 @@ func getBuildings(url string) (*geojson.FeatureCollection, *geojson.FeatureColle
     res.Body.Close()
     check(err)
 
-    // Unmarshal json into buildings struct
-    buildings := geojson.NewFeatureCollection()
-    err = json.Unmarshal(body, buildings)
+    // Unmarshal json into Features struct
+    features := geojson.NewFeatureCollection()
+    err = json.Unmarshal(body, features)
     check(err)
 
-    convertedBuildings := geojson.NewFeatureCollection()
-    err = json.Unmarshal(body, convertedBuildings)
+    convertedFeatures := geojson.NewFeatureCollection()
+    err = json.Unmarshal(body, convertedFeatures)
     check(err)
 
-    return buildings, convertedBuildings
+    return features, convertedFeatures
 }
 
 /*
@@ -69,8 +55,18 @@ func convertCoordinates(lon, lat float64) (float64, float64) {
     // The coordinates are floats, so we must convert them into strings to include them in the cs2cs command
     lonStr := strconv.FormatFloat(lon, 'f', -1, 64)
     latStr := strconv.FormatFloat(lat, 'f', -1, 64)
+    
+    var cs2csProjection string
 
-    cs2csCommand := "echo \"" + lonStr + " " + latStr + "\" | cs2cs -f %8.6f +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs +to +proj=longlat +datum=WGS84 +no_defs"
+    // Check whether coordinates are NAD83 or Web Mercator. NAD83 will have a positive longitude given our region of the globe.
+    // TODO: ARCGIS will soon only be using NAD83, so this if/else statement won't be necessary.
+    if lon > 0 {
+        cs2csProjection = "+proj=lcc +lat_1=46 +lat_2=44.33333333333334 +lat_0=43.66666666666666 +lon_0=-120.5 +x_0=2500000.0001424 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=ft +no_defs"
+    } else {
+        cs2csProjection = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
+    }
+
+    cs2csCommand := "echo \"" + lonStr + " " + latStr + "\" | cs2cs -f %8.6f " + cs2csProjection + " +to +proj=longlat +datum=WGS84 +no_defs"
     cmd := exec.Command("sh", "-c", cs2csCommand)
     stdoutStderr, err := cmd.CombinedOutput()
     check(err)
@@ -90,41 +86,46 @@ func convertCoordinates(lon, lat float64) (float64, float64) {
 /*
 Iterate over each coordinate and reassign coordinates to converted values
 */
-func coordinateIterator(buildings *geojson.FeatureCollection, convertedBuildings *geojson.FeatureCollection) {
+func coordinateIterator(features *geojson.FeatureCollection, convertedFeatures *geojson.FeatureCollection) {
     // Iterate over each coordinate pair and convert coordinates using convertCoordinates()
-    for featureIndex, building := range buildings.Features {
-        fmt.Println("Converting building", building.Properties["BldNam"])
-        if building.Geometry.Type == "Polygon" {
-            for ringIndex, ring := range building.Geometry.Polygon {
+    for featureIndex, feature := range features.Features {
+        fmt.Println("Converting feature coordinates", feature.Properties["OBJECTID"])
+        if feature.Geometry.Type == "Polygon" {
+            for ringIndex, ring := range feature.Geometry.Polygon {
                 for coordPairIndex, coordpair := range ring {
                     convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
 
                     // Reassign coordinate values to the converted coordinates
-                    convertedBuildings.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring) - 1) - coordPairIndex][0] = convertedLon
-                    convertedBuildings.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring) - 1) - coordPairIndex][1] = convertedLat
+                    convertedFeatures.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring) - 1) - coordPairIndex][0] = convertedLon
+                    convertedFeatures.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring) - 1) - coordPairIndex][1] = convertedLat
                 }
             }
-        } else if building.Geometry.Type == "MultiPolygon" {
-            for polygonIndex, polygon := range building.Geometry.MultiPolygon {
+        } else if feature.Geometry.Type == "MultiPolygon" {
+            for polygonIndex, polygon := range feature.Geometry.MultiPolygon {
                 for ringIndex, ring := range polygon {
                     for coordPairIndex, coordpair := range ring  {
                         convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
 
                         // Reassign coordinate values to the converted coordinates
-                        convertedBuildings.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring) - 1) - coordPairIndex][0] = convertedLon
-                        convertedBuildings.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring) - 1) - coordPairIndex][1] = convertedLat
+                        convertedFeatures.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring) - 1) - coordPairIndex][0] = convertedLon
+                        convertedFeatures.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring) - 1) - coordPairIndex][1] = convertedLat
                     }
                 }
             }
+        } else if feature.Geometry.Type == "Point" {
+            convertedLon, convertedLat := convertCoordinates(feature.Geometry.Point[0], feature.Geometry.Point[1])
+
+            convertedFeatures.Features[featureIndex].Geometry.Point[0] = convertedLon
+            convertedFeatures.Features[featureIndex].Geometry.Point[1] = convertedLat
         }
     }
 }
 
 /*
-Marshal buildings struct to json and write to file
+Marshal features struct to json and write to file
 */
-func writeBuildingstoJson(buildings *geojson.FeatureCollection, filePath string) {
-    convertedJson, err := json.Marshal(buildings)
+func writeFeaturestoJson(features *geojson.FeatureCollection, filePath string) {
+    convertedJson, err := json.Marshal(features)
     check(err)
 
     var prettyJson bytes.Buffer
@@ -148,9 +149,10 @@ func main() {
         os.Exit(1)
     }
 
-    buildings, convertedBuildings := getBuildings(*url)
+    features, convertedFeatures := getFeatures(*url)
 
-    coordinateIterator(buildings, convertedBuildings)
+    coordinateIterator(features, convertedFeatures)
 
-    writeBuildingstoJson(convertedBuildings, *filePath)
+    writeFeaturestoJson(convertedFeatures, *filePath)
 }
+

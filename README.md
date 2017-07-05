@@ -1,6 +1,22 @@
 # Coordinate Converter
 Coordinate Converter is used to convert coordinates from a JSON http response. Specfically, this program is used at OSU with ARCGIS to convert coordinates to latitude and longitude.
 
+### Coordinate System
+This program is meant to convert coordinates for locations at Oregon State University.
+As such, the coordinate projections we are accepting are either:
+
+NAD_1983_HARN_StatePlane_Oregon_North_FIPS_3601_Feet_Intl
+WKID: 2913 Authority: EPSG
+
+or
+
+WGS_1984_Web_Mercator_Auxiliary_Sphere
+WKID: 3857 Authority: EPSG
+
+Accepting both coordinate types is a temporary feature that will soon be deprecated after all coordinates given from ARCGIS are NAD_1983 (WKID 2913).
+
+All coordinates are converted to the WGS84 projection.
+
 ### Dependencies
 
 * [github.com/paulmach/go.geojson](https://github.com/paulmach/go.geojson)
