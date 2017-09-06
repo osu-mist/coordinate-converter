@@ -59,14 +59,6 @@ func convertCoordinates(lon, lat float64) (float64, float64) {
 
 	var cs2csProjection string
 
-	// Check whether coordinates are NAD83 or Web Mercator. NAD83 will have a positive longitude given our region of the globe.
-	// TODO: ARCGIS will soon only be using NAD83, so this if/else statement won't be necessary.
-	//if lon > 0 {
-	//    cs2csProjection = "+proj=lcc +lat_1=46 +lat_2=44.33333333333334 +lat_0=43.66666666666666 +lon_0=-120.5 +x_0=2500000.0001424 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=ft +no_defs"
-	//} else {
-	//    cs2csProjection = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
-	//}
-
 	cs2csProjection = "+proj=lcc +lat_1=46 +lat_2=44.33333333333334 +lat_0=43.66666666666666 +lon_0=-120.5 +x_0=2500000.0001424 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=ft +no_defs"
 
 	cs2csCommand := "echo \"" + lonStr + " " + latStr + "\" | cs2cs -f %8.6f " + cs2csProjection + " +to +proj=longlat +datum=WGS84 +no_defs"
