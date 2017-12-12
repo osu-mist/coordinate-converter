@@ -8,6 +8,7 @@ services:
       - $PWD:/go/src/github.com/osu-mist/coordinate-converter
     working_dir: /go/src/github.com/osu-mist/coordinate-converter
     command: go build -v
+    network_mode: "host"
   cs2cs:
     image: "osgeo/proj.4"
     depends_on:
@@ -18,3 +19,4 @@ services:
       - $PWD:/tmp
     working_dir: /tmp
     command: sh -c /tmp/run.sh
+    network_mode: "host"
