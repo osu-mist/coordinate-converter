@@ -94,41 +94,41 @@ func coordinateIterator(features *geojson.FeatureCollection, convertedFeatures *
 
 		}
 
-        if feature.Geometry != nil {
-            switch feature.Geometry.Type {
-            case "Polygon":
-                for ringIndex, ring := range feature.Geometry.Polygon {
-                    for coordPairIndex, coordpair := range ring {
-                        convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
+		if feature.Geometry != nil {
+			switch feature.Geometry.Type {
+			case "Polygon":
+				for ringIndex, ring := range feature.Geometry.Polygon {
+					for coordPairIndex, coordpair := range ring {
+						convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
 
-                        // Reassign coordinate values to the converted coordinates
-                        convertedFeatures.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring)-1)-coordPairIndex][0] = convertedLon
-                        convertedFeatures.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring)-1)-coordPairIndex][1] = convertedLat
-                    }
-                }
-            case "MultiPolygon":
-                for polygonIndex, polygon := range feature.Geometry.MultiPolygon {
-                    for ringIndex, ring := range polygon {
-                        for coordPairIndex, coordpair := range ring {
-                            convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
+						// Reassign coordinate values to the converted coordinates
+						convertedFeatures.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring)-1)-coordPairIndex][0] = convertedLon
+						convertedFeatures.Features[featureIndex].Geometry.Polygon[ringIndex][(len(ring)-1)-coordPairIndex][1] = convertedLat
+					}
+				}
+			case "MultiPolygon":
+				for polygonIndex, polygon := range feature.Geometry.MultiPolygon {
+					for ringIndex, ring := range polygon {
+						for coordPairIndex, coordpair := range ring {
+							convertedLon, convertedLat := convertCoordinates(coordpair[0], coordpair[1])
 
-                            // Reassign coordinate values to the converted coordinates
-                            convertedFeatures.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring)-1)-coordPairIndex][0] = convertedLon
-                            convertedFeatures.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring)-1)-coordPairIndex][1] = convertedLat
-                        }
-                    }
-                }
-            case "Point":
-                convertedLon, convertedLat := convertCoordinates(feature.Geometry.Point[0], feature.Geometry.Point[1])
+							// Reassign coordinate values to the converted coordinates
+							convertedFeatures.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring)-1)-coordPairIndex][0] = convertedLon
+							convertedFeatures.Features[featureIndex].Geometry.MultiPolygon[polygonIndex][ringIndex][(len(ring)-1)-coordPairIndex][1] = convertedLat
+						}
+					}
+				}
+			case "Point":
+				convertedLon, convertedLat := convertCoordinates(feature.Geometry.Point[0], feature.Geometry.Point[1])
 
-                convertedFeatures.Features[featureIndex].Geometry.Point[0] = convertedLon
-                convertedFeatures.Features[featureIndex].Geometry.Point[1] = convertedLat
-            default:
-                fmt.Println("Warning: Ignoring this geometry type: ", feature.Geometry.Type)
-            }
-        } else {
-            fmt.Println("Warning: No geometry object.")
-        }
+				convertedFeatures.Features[featureIndex].Geometry.Point[0] = convertedLon
+				convertedFeatures.Features[featureIndex].Geometry.Point[1] = convertedLat
+			default:
+				fmt.Println("Warning: Ignoring this geometry type: ", feature.Geometry.Type)
+			}
+		} else {
+			fmt.Println("Warning: No geometry object.")
+		}
 	}
 }
 
