@@ -86,12 +86,19 @@ func coordinateIterator(features *geojson.FeatureCollection, convertedFeatures *
 	for featureIndex, feature := range features.Features {
 		fmt.Println("Converting feature coordinates", feature.Properties["OBJECTID"])
 
-		if feature.Properties["Cent_Lon"] != nil && feature.Properties["Cent_Lat"] != nil {
+		centLon, okCentLon := feature.Properties["Cent_Lon"].(float64)
+		centLat, okCentLat := feature.Properties["Cent_Lat"].(float64)
+
+		if okCentLon && okCentLat && centLon != 0 && centLat != 0 {
+			// Only convert non-zero centroids
 			convertedCentroidLon, convertedCentroidLat := convertCoordinates(feature.Properties["Cent_Lon"].(float64), feature.Properties["Cent_Lat"].(float64))
 
 			convertedFeatures.Features[featureIndex].Properties["Cent_Lon"] = convertedCentroidLon
 			convertedFeatures.Features[featureIndex].Properties["Cent_Lat"] = convertedCentroidLat
-
+		} else {
+			// If centroid is nil or 0, set the ouputted centroid to nil
+			convertedFeatures.Features[featureIndex].Properties["Cent_Lon"] = nil
+			convertedFeatures.Features[featureIndex].Properties["Cent_Lat"] = nil
 		}
 
 		if feature.Geometry != nil {
