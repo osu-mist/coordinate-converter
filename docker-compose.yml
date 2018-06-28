@@ -9,7 +9,7 @@ services:
     working_dir: /go/src/github.com/osu-mist/coordinate-converter
     command: go build -v
   cs2cs:
-    image: "osgeo/proj.4"
+    image: "osgeo/proj"
     depends_on:
       - go
     environment:
