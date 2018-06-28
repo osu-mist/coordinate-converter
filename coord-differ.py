@@ -9,6 +9,8 @@
 
 import sys
 import json
+import dictdiffer
+
 from docopt import docopt
 print(docopt(__doc__, version='1.0.0rc2'))
 
@@ -49,10 +51,35 @@ if __name__ == "__main__":
                 else:
                     print "Deprecated feature with old id: {}".format(differing_feature_id)
 
-            #TODO Exclude diff_keys from old_mapped and new_mapped, find differences in common features
             #already in sorted order
             for common_feature_id in old_coords_view & new_coords_view:
+                print "Processing id:{}".format(common_feature_id)
+
                 if(old_mapped[common_feature_id] != new_mapped[common_feature_id]):
+                    old = old_mapped[common_feature_id]
+                    new = new_mapped[common_feature_id]
                     print "Start diffing"
-                    
-            import pdb; pdb.set_trace()
+
+                    if(old['properties']['AIMS_Name'] != new['properties']['AIMS_Name'] or
+                        old['properties']['AiM_Desc'] != new['properties']['AiM_Desc'] or
+                        old['properties']['Notes'] != new['properties']['Notes']):
+                        
+                        print "!!! Feature id {}'s name, desc, notes have changed!".format(common_feature_id)
+                        print "OLD {} - {} - {}".format(old['properties']['AIMS_Name'],
+                                                        old['properties']['AiM_Desc'],
+                                                        old['properties']['Notes'])
+
+                        print "NEW {} - {} - {}".format(new['properties']['AIMS_Name'],
+                                                        new['properties']['AiM_Desc'],
+                                                        new['properties']['Notes'])
+
+                    else:
+                        print "Location id: {} - {} - {} - {}".format(common_feature_id,
+                            old['properties']['AIMS_Name'], old['properties']['AiM_Desc'], old['properties']['Notes'])
+
+                    print "Diffing fields"
+                    #dictdiff geometry and properties dict
+                    if(old['geometry']['type'] != new['geometry']['type']):
+                        print "Geometry Type has changed."
+
+
