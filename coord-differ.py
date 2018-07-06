@@ -62,7 +62,8 @@ def reportDiff(diff):
     for key, value in adds.iteritems():
         print "{}: {} -> {}".format(key, value[0], value[1])
     
-    import pdb; pdb.set_trace()
+    #TODO finish reporting layout
+    #import pdb; pdb.set_trace()
     print "Removes"
     for key, value in removes.iteritems():
         print "{}: {} -> {}".format(key, value[0], value[1])
