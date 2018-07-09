@@ -125,7 +125,6 @@ if __name__ == "__main__":
                 if(old_mapped[common_feature_id] != new_mapped[common_feature_id]):
                     old = old_mapped[common_feature_id]
                     new = new_mapped[common_feature_id]
-                    #print "Start diffing\n"
 
                     try:
                         #TODO figure out how to handle missing keys for AIMS_Name
@@ -145,16 +144,6 @@ if __name__ == "__main__":
                         print "Key Error caught"
                         pass
 
-                    #print "Location id: {} - {} - {}".format(common_feature_id,
-                    #                                old['properties']['AiM_Desc'], old['properties']['Notes'])
-
-                    #print "\nDiffing fields"
-                    #dictdiff geometry and properties dict
-
-                    #diff returns an iterator...
-                    #TODO order by add, remove, changes
-                    #TODO coordinate floating point threshold cmd option
-                    #TODO add ignore type in geometry diff
                     if(args['--coord_threshold']):
                         geo_diff = list(diff(old['geometry'], new['geometry'], tolerance=float(args['--coord_threshold'])))
                     else:
