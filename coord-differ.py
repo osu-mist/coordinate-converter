@@ -1,10 +1,14 @@
 """
     Usage:
     coord-differ.py <old_data_path> <new_data_path>
+    coord-differ.py <old_data_path> <new_data_path> --coord_threshold=<threshold>
 
     Arguments:
         old_data_path: File path of old building json
         new_data_path: File path of new building json
+    
+    Options:
+        --coord_threshold=<threshold>   Floating point difference threshold for reporting changed coordinate values
 """
 
 import sys
@@ -38,39 +42,53 @@ def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
     print "# of removed features: {}".format(len(removed_ids))
     print "-------------------------------------"
     for f in new_ids:
-        print "New feature with id: {}".format(differing_feature_id)
+        print "New feature with id: {}".format(f)
     print "-------------------------------------"
     for f in removed_ids:
-        print "Deprecated feature with old id: {}".format(differing_feature_id)
+        print "Deprecated feature with old id: {}".format(f)
     print "=====================================\n"
+
+def reportGeoDiff(diff, tolerance=None):
+    if(tolerance):
+        print "These are the coordinates that have changed past the tolerance of {}".format(tolerance)
+    else:
+        print "These are ALL the changes in the coordinates"
+
+    #print diff
+    for d in diff:
+        print d
+
 
 def reportDiff(diff):
     adds = {}
     removes = {}
     changes = {}
 
-    print diff
+    #print diff
     for d in diff:
         if(d[0] == 'change'):
-            adds[d[1]] = d[2]
-        elif(d[0] == 'add'):
-            removes[d[1]] = d[2]
-        elif(d[0] == 'remove'):
             changes[d[1]] = d[2]
+        elif(d[0] == 'add'):
+            adds[d[1]] = d[2]
+        elif(d[0] == 'remove'):
+            removes[d[1]] = d[2]
 
-    print "$$$ adds"
-    for key, value in adds.iteritems():
-        print "{}: {} -> {}".format(key, value[0], value[1])
-    
+    if adds:
+        print "Added Attributes:"
+        for key, value in adds.iteritems():
+            print "{}:\t{} ".format(key, value)
+        
     #TODO finish reporting layout
-    #import pdb; pdb.set_trace()
-    print "Removes"
-    for key, value in removes.iteritems():
-        print "{}: {} -> {}".format(key, value[0], value[1])
+    if removes:
+        print "\nRemoved Attributes:"
+        for key, value in removes.iteritems():
+            print "{}:\t{} ".format(key, value)
 
-    print "Changes"
-    for key, value in changes.iteritems():
-        print "{}: {} -> {}".format(key, value[0], value[1])
+    if changes:
+        print "\nChanged Atrributes:"
+        for key, value in changes.iteritems():
+            print "{}:\t{} -> {}".format(key, value[0], value[1])
+            
 
 if __name__ == "__main__":
     if(args['<old_data_path>'] == args['<new_data_path>']):
@@ -99,9 +117,9 @@ if __name__ == "__main__":
             reportNewOrRemovedIDs(old_coords_view, new_coords_view)
 
             print "Processing common ids"
-            print "\n====================================="
+            print "====================================="
             for common_feature_id in old_coords_view & new_coords_view: #already in sorted order
-                print "Processing id:{}".format(common_feature_id)
+                print "Processing ID:{}".format(common_feature_id)
                 print "-------------------------------------"
 
                 if(old_mapped[common_feature_id] != new_mapped[common_feature_id]):
@@ -115,7 +133,7 @@ if __name__ == "__main__":
                             old['properties']['AiM_Desc'] != new['properties']['AiM_Desc'] or
                             old['properties']['Notes'] != new['properties']['Notes']):
 
-                            print "Feature id {}'s name, desc and notes have changed!".format(common_feature_id)
+                            print "Feature ID {}'s name, desc and notes have changed!".format(common_feature_id)
                             print "OLD: `{}` - `{}` - `{}`".format(old['properties']['AIMS_Name'],
                                                             old['properties']['AiM_Desc'],
                                                             old['properties']['Notes'])
@@ -127,23 +145,29 @@ if __name__ == "__main__":
                         print "Key Error caught"
                         pass
 
-                    print "Location id: {} - {} - {}".format(common_feature_id,
-                                                    old['properties']['AiM_Desc'], old['properties']['Notes'])
+                    #print "Location id: {} - {} - {}".format(common_feature_id,
+                    #                                old['properties']['AiM_Desc'], old['properties']['Notes'])
 
-                    print "\nDiffing fields"
+                    #print "\nDiffing fields"
                     #dictdiff geometry and properties dict
 
                     #diff returns an iterator...
                     #TODO order by add, remove, changes
                     #TODO coordinate floating point threshold cmd option
                     #TODO add ignore type in geometry diff
-                    geo_diff = list(diff(old['geometry'], new['geometry']))
+                    if(args['--coord_threshold']):
+                        geo_diff = list(diff(old['geometry'], new['geometry'], tolerance=float(args['--coord_threshold'])))
+                    else:
+                        geo_diff = list(diff(old['geometry'], new['geometry']))
                     properties_diff = list(diff(old['properties'], new['properties']))
 
-                    print "Properties Differences"
-                    print reportDiff(properties_diff)
-                    print "\nGeometry Differences"
-                    print reportDiff(geo_diff)
+                    if(properties_diff):
+                        print "Properties Differences"
+                        reportDiff(properties_diff)
+                    if(geo_diff):
+                        print "\nGeometry Differences"
+                        reportGeoDiff(geo_diff, tolerance=float(args['--coord_threshold']))
+                    
                     print "-------------------------------------"
 
 
