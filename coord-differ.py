@@ -20,11 +20,13 @@ from docopt import docopt
 
 args = docopt(__doc__, version='1.0.0rc2')
 
+
 def mapFeatToID(json):
     features = {}
     for f in json['features']:
         features[f['id']] = f
     return features
+
 
 def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
     new_ids = []
@@ -40,13 +42,16 @@ def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
     print "New or missing id's"
     print "# of new features: {}".format(len(new_ids))
     print "# of removed features: {}".format(len(removed_ids))
-    print "-------------------------------------"
-    for f in new_ids:
-        print "New feature with id: {}".format(f)
-    print "-------------------------------------"
-    for f in removed_ids:
-        print "Deprecated feature with old id: {}".format(f)
+    if(new_ids):
+        print "-------------------------------------"
+        for f in new_ids:
+            print "New feature with id: {}".format(f)
+    if(removed_ids):
+        print "-------------------------------------"
+        for f in removed_ids:
+            print "Deprecated feature with old id: {}".format(f)
     print "=====================================\n"
+
 
 def reportGeoDiff(diff, tolerance=None):
     if(tolerance):
@@ -54,7 +59,7 @@ def reportGeoDiff(diff, tolerance=None):
     else:
         print "These are ALL the changes in the coordinates"
 
-    #print diff
+    # print diff
     for d in diff:
         print d
 
@@ -64,7 +69,7 @@ def reportDiff(diff):
     removes = {}
     changes = {}
 
-    #print diff
+    # print diff
     for d in diff:
         if(d[0] == 'change'):
             changes[d[1]] = d[2]
@@ -76,19 +81,19 @@ def reportDiff(diff):
     if adds:
         print "Added Attributes:"
         for key, value in adds.iteritems():
-            print "{}:\t{} ".format(key, value)
-        
-    #TODO finish reporting layout
+            print "{}: `{}`".format(key, value)
+
+    # TODO finish reporting layout
     if removes:
         print "\nRemoved Attributes:"
         for key, value in removes.iteritems():
-            print "{}:\t{} ".format(key, value)
+            print "{}: `{}`".format(key, value)
 
     if changes:
         print "\nChanged Atrributes:"
         for key, value in changes.iteritems():
-            print "{}:\t{} -> {}".format(key, value[0], value[1])
-            
+            print "{}: `{}` -> `{}`".format(key, value[0], value[1])
+
 
 if __name__ == "__main__":
     if(args['<old_data_path>'] == args['<new_data_path>']):
@@ -97,14 +102,14 @@ if __name__ == "__main__":
     else:
         with open(args['<old_data_path>'], "r") as old_json_file, open(args['<new_data_path>'], "r") as new_json_file:
             old_coords = json.loads(new_json_file.read())
-            new_coords  = json.loads(old_json_file.read())
+            new_coords = json.loads(old_json_file.read())
 
-        #if (old_coords_view ^ new_coords_view) != set([]):
+        # if (old_coords_view ^ new_coords_view) != set([]):
         if (old_coords == new_coords):
-            #print "There are no differences"
+            # print "There are no differences"
             sys.exit(0)
         else:
-            #print "There are differences"
+            # print "There are differences"
             if(old_coords['crs'] != new_coords['crs']):
                 print "Spacial reference has changed from: {} to {}".format(old_coords['crs'], new_coords['crs'])
 
@@ -118,45 +123,35 @@ if __name__ == "__main__":
 
             print "Processing common ids"
             print "====================================="
-            for common_feature_id in old_coords_view & new_coords_view: #already in sorted order
-                print "Processing ID:{}".format(common_feature_id)
-                print "-------------------------------------"
+            for common_feature_id in old_coords_view & new_coords_view:  # already in sorted order
 
                 if(old_mapped[common_feature_id] != new_mapped[common_feature_id]):
                     old = old_mapped[common_feature_id]
                     new = new_mapped[common_feature_id]
 
-                    try:
-                        #TODO figure out how to handle missing keys for AIMS_Name
-                        if(old['properties']['AIMS_Name'] != new['properties']['AIMS_Name'] or
-                            old['properties']['AiM_Desc'] != new['properties']['AiM_Desc'] or
-                            old['properties']['Notes'] != new['properties']['Notes']):
-
-                            print "Feature ID {}'s name, desc and notes have changed!".format(common_feature_id)
-                            print "OLD: `{}` - `{}` - `{}`".format(old['properties']['AIMS_Name'],
-                                                            old['properties']['AiM_Desc'],
-                                                            old['properties']['Notes'])
-
-                            print "NEW: `{}` - `{}` - `{}`".format(new['properties']['AIMS_Name'],
-                                                            new['properties']['AiM_Desc'],
-                                                            new['properties']['Notes'])
-                    except KeyError as e:
-                        print "Key Error caught"
-                        pass
-
                     if(args['--coord_threshold']):
-                        geo_diff = list(diff(old['geometry'], new['geometry'], tolerance=float(args['--coord_threshold'])))
+                        geo_diff = list(diff(old['geometry'], new['geometry'], tolerance=float(
+                            args['--coord_threshold'])))
                     else:
                         geo_diff = list(diff(old['geometry'], new['geometry']))
-                    properties_diff = list(diff(old['properties'], new['properties']))
+                    properties_diff = list(
+                        diff(old['properties'], new['properties']))
 
-                    if(properties_diff):
-                        print "Properties Differences"
-                        reportDiff(properties_diff)
-                    if(geo_diff):
-                        print "\nGeometry Differences"
-                        reportGeoDiff(geo_diff, tolerance=float(args['--coord_threshold']))
-                    
-                    print "-------------------------------------"
+                    if(properties_diff or geo_diff):
+                        print "\nID:{}".format(common_feature_id)
+                        print "-------------------------------------"
 
+                        if(properties_diff):
+                            print "Properties Differences"
+                            reportDiff(properties_diff)
+                        if(geo_diff):
+                            if(properties_diff):
+                                print ""
+                            print "Geometry Differences"
+                            if(args['--coord_threshold']):
+                                reportGeoDiff(geo_diff, tolerance=float(
+                                    args['--coord_threshold']))
+                            else:
+                                reportGeoDiff(geo_diff)
 
+                        print "-------------------------------------"
