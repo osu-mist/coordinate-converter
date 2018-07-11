@@ -16,6 +16,7 @@ import json
 from dictdiffer import diff
 
 from docopt import docopt
+import pprint
 #print(docopt(__doc__, version='1.0.0rc2'))
 
 args = docopt(__doc__, version='1.0.0rc2')
@@ -44,24 +45,49 @@ def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
     print "# of removed features: {}".format(len(removed_ids))
     if(new_ids):
         print "-------------------------------------"
-        for f in new_ids:
-            print "New feature with id: {}".format(f)
+        print "New features ids:"
+        print new_ids
+        #pprint.pprint(new_ids)
     if(removed_ids):
         print "-------------------------------------"
-        for f in removed_ids:
-            print "Deprecated feature with old id: {}".format(f)
-    print "=====================================\n"
+        print "Deprecated feature ids:"
+        print removed_ids
+        #pprint.pprint(removed_ids)
+    print "====================================="
 
 
-def reportGeoDiff(diff, tolerance=None):
+def reportIndivDiffs(packed_diffs):
+    for (common_feature_id, properties_diff, geo_diff, type_change) in packed_diffs:
+        if(properties_diff or geo_diff):
+            print "\nID:{}".format(common_feature_id)
+            print "-------------------------------------"
+            if(properties_diff):
+                print "Properties Differences"
+                reportDiff(properties_diff)
+            if(geo_diff):
+                if(properties_diff):
+                    print ""
+                print "Geometry Differences"
+                if(args['--coord_threshold']):
+                    reportGeoDiff(geo_diff, type_change, tolerance=float(
+                        args['--coord_threshold']))
+                else:
+                    reportGeoDiff(geo_diff, type_change)
+            print "-------------------------------------"
+
+
+def reportGeoDiff(diff, type_change, tolerance=None):
     if(tolerance):
         print "These are the coordinates that have changed past the tolerance of {}".format(tolerance)
     else:
         print "These are ALL the changes in the coordinates"
 
     # print diff
-    for d in diff:
-        print d
+    # for d in diff:
+    #    print d
+    if(type_change):
+        print "!!! Geometry type has changed !!!"
+    pprint.pprint(diff)
 
 
 def reportDiff(diff):
@@ -80,19 +106,23 @@ def reportDiff(diff):
 
     if adds:
         print "Added Attributes:"
-        for key, value in adds.iteritems():
-            print "{}: `{}`".format(key, value)
+        # for key, value in adds.iteritems():
+        #    print "{}: `{}`".format(key, value)
+
+        pprint.pprint(adds)
 
     # TODO finish reporting layout
     if removes:
         print "\nRemoved Attributes:"
-        for key, value in removes.iteritems():
-            print "{}: `{}`".format(key, value)
+        # for key, value in removes.iteritems():
+        #    print "{}: `{}`".format(key, value)
+        pprint.pprint(removes)
 
     if changes:
         print "\nChanged Atrributes:"
         for key, value in changes.iteritems():
             print "{}: `{}` -> `{}`".format(key, value[0], value[1])
+        # pprint.pprint(changes)
 
 
 if __name__ == "__main__":
@@ -121,8 +151,8 @@ if __name__ == "__main__":
 
             reportNewOrRemovedIDs(old_coords_view, new_coords_view)
 
-            print "Processing common ids"
-            print "====================================="
+            packed_diffs = []  # idx, properties_diff, geo_diff
+            type_change_count = 0
             for common_feature_id in old_coords_view & new_coords_view:  # already in sorted order
 
                 if(old_mapped[common_feature_id] != new_mapped[common_feature_id]):
@@ -134,24 +164,31 @@ if __name__ == "__main__":
                             args['--coord_threshold'])))
                     else:
                         geo_diff = list(diff(old['geometry'], new['geometry']))
+
+                    try:
+                        if(old['geometry']['type'] != new['geometry']['type']):
+                            type_change = True;
+                            type_change_count += 1
+                        else:
+                            type_change = False;
+                    except TypeError:
+                        #OCEANOGRAPHY SHOPS COMPLEX LOT was an example of a feature previously lacking the Geometry so this comparison on type would fail
+                        if(old['geometry'] != new['geometry']):
+                            type_change = True;
+                        else:
+                            type_change = False;
+
+
                     properties_diff = list(
                         diff(old['properties'], new['properties']))
 
-                    if(properties_diff or geo_diff):
-                        print "\nID:{}".format(common_feature_id)
-                        print "-------------------------------------"
+                    packed_diffs.append(
+                        (common_feature_id, properties_diff, geo_diff, type_change))
 
-                        if(properties_diff):
-                            print "Properties Differences"
-                            reportDiff(properties_diff)
-                        if(geo_diff):
-                            if(properties_diff):
-                                print ""
-                            print "Geometry Differences"
-                            if(args['--coord_threshold']):
-                                reportGeoDiff(geo_diff, tolerance=float(
-                                    args['--coord_threshold']))
-                            else:
-                                reportGeoDiff(geo_diff)
+            if(type_change_count):
+                print "{} id's have changed geometry types".format(type_change_count)
 
-                        print "-------------------------------------"
+            print "====================================="
+            print "Reporting common ids diffs"
+            print "====================================="
+            reportIndivDiffs(packed_diffs)
