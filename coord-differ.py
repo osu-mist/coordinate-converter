@@ -14,6 +14,7 @@
 import sys
 import json
 from dictdiffer import diff
+import functools
 
 from docopt import docopt
 import pprint
@@ -127,12 +128,22 @@ def reportDiff(diff):
 
 if __name__ == "__main__":
     if(args['<old_data_path>'] == args['<new_data_path>']):
-        print "These are the same file..."
+        print >> sys.stderr, "These are the same file..."
         sys.exit(1)
     else:
         with open(args['<old_data_path>'], "r") as old_json_file, open(args['<new_data_path>'], "r") as new_json_file:
             old_coords = json.loads(new_json_file.read())
             new_coords = json.loads(old_json_file.read())
+
+        if(args['--coord_threshold']):
+            try:
+                thresh = float(args['--coord_threshold'])
+            except ValueError:
+                print >> sys.stderr, "Invalid threshhold value"
+                exit(1)
+            geo_differ = lambda old_geo, new_geo: list(diff(old_geo, new_geo, tolerance=thresh))
+        else:
+            geo_differ = lambda old_geo, new_geo: list(diff(old_geo, new_geo))
 
         # if (old_coords_view ^ new_coords_view) != set([]):
         if (old_coords == new_coords):
@@ -159,11 +170,7 @@ if __name__ == "__main__":
                     old = old_mapped[common_feature_id]
                     new = new_mapped[common_feature_id]
 
-                    if(args['--coord_threshold']):
-                        geo_diff = list(diff(old['geometry'], new['geometry'], tolerance=float(
-                            args['--coord_threshold'])))
-                    else:
-                        geo_diff = list(diff(old['geometry'], new['geometry']))
+                    geo_diff = geo_differ(old['geometry'], new['geometry'])
 
                     try:
                         if(old['geometry']['type'] != new['geometry']['type']):
