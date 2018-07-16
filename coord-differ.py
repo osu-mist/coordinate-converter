@@ -22,23 +22,29 @@ import pprint
 
 args = docopt(__doc__, version='1.0.0rc2')
 
-
 def mapFeatToID(json):
     features = {}
     for f in json['features']:
         features[f['id']] = f
     return features
 
+"""
+    Diffs two Dict viewkeys, an old dict and new dict, and returns the new keys and removed keys as a pair.
+"""
+def diff_viewkeys(old_view, new_view):
+    new_keys = []
+    removed_keys = []
+    for differing_key in old_view ^ new_view:
+        if differing_key not in new_view:
+            removed_keys.append(differing_key)
+        else:
+            new_keys.append(differing_key)
+
+    return (new_keys, removed_keys)
+
 
 def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
-    new_ids = []
-    removed_ids = []
-
-    for differing_feature_id in old_coords_view ^ new_coords_view:
-        if differing_feature_id not in new_coords_view:
-            removed_ids.append(differing_feature_id)
-        else:
-            new_ids.append(differing_feature_id)
+    new_ids, removed_ids = diff_viewkeys(old_coords_view, new_coords_view)
 
     print "====================================="
     print "New or missing id's"
