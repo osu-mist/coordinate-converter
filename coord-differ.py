@@ -54,12 +54,10 @@ def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
         print "-------------------------------------"
         print "New features ids:"
         print new_ids
-        #pprint.pprint(new_ids)
     if(removed_ids):
         print "-------------------------------------"
         print "Deprecated feature ids:"
         print removed_ids
-        #pprint.pprint(removed_ids)
     print "====================================="
 
 
@@ -89,48 +87,50 @@ def reportGeoDiff(diff, type_change, tolerance=None):
     else:
         print "These are ALL the changes in the coordinates"
 
-    # print diff
-    # for d in diff:
-    #    print d
     if(type_change):
         print "!!! Geometry type has changed !!!"
     pprint.pprint(diff)
 
+def argparse_lambda_for_geo_differ():
+    if(args['--coord_threshold']):
+        thresh = float(args['--coord_threshold'])
+        geo_differ = lambda old_geo, new_geo: list(diff(old_geo, new_geo, tolerance=thresh))
+    else:
+        geo_differ = lambda old_geo, new_geo: list(diff(old_geo, new_geo))
+    return geo_differ
 
-def reportDiff(diff):
+"""
+    Splits the dictdiffer diff by category: adds, removes, changes
+"""
+def splitDiffByCategory(diff):
     adds = {}
     removes = {}
     changes = {}
-
-    # print diff
+    #repr usage is to handle nested object diffs from throwing TypeError: unhashable type 'list'
     for d in diff:
         if(d[0] == 'change'):
-            changes[d[1]] = d[2]
+            changes[d[1].__repr__()] = d[2]
         elif(d[0] == 'add'):
-            adds[d[1]] = d[2]
+            adds[d[1].__repr__()] = d[2]
         elif(d[0] == 'remove'):
-            removes[d[1]] = d[2]
+            removes[d[1].__repr__()] = d[2]
+    return adds, removes, changes
+
+def reportDiff(diff):
+    adds, removes, changes = splitDiffByCategory(diff)
 
     if adds:
         print "Added Attributes:"
-        # for key, value in adds.iteritems():
-        #    print "{}: `{}`".format(key, value)
-
         pprint.pprint(adds)
 
-    # TODO finish reporting layout
     if removes:
         print "\nRemoved Attributes:"
-        # for key, value in removes.iteritems():
-        #    print "{}: `{}`".format(key, value)
         pprint.pprint(removes)
 
     if changes:
         print "\nChanged Atrributes:"
         for key, value in changes.iteritems():
             print "{}: `{}` -> `{}`".format(key, value[0], value[1])
-        # pprint.pprint(changes)
-
 
 if __name__ == "__main__":
     if(args['<old_data_path>'] == args['<new_data_path>']):
@@ -141,17 +141,12 @@ if __name__ == "__main__":
             old_coords = json.loads(new_json_file.read())
             new_coords = json.loads(old_json_file.read())
 
-        if(args['--coord_threshold']):
-            try:
-                thresh = float(args['--coord_threshold'])
-            except ValueError:
-                print >> sys.stderr, "Invalid threshhold value"
-                exit(1)
-            geo_differ = lambda old_geo, new_geo: list(diff(old_geo, new_geo, tolerance=thresh))
-        else:
-            geo_differ = lambda old_geo, new_geo: list(diff(old_geo, new_geo))
+        try:
+            geo_differ = argparse_lambda_for_geo_differ()
+        except ValueError:
+            print >> sys.stderr, "Invalid threshhold value"
+            exit(1)
 
-        # if (old_coords_view ^ new_coords_view) != set([]):
         if (old_coords == new_coords):
             # print "There are no differences"
             sys.exit(0)
@@ -165,10 +160,9 @@ if __name__ == "__main__":
 
             old_coords_view = old_mapped.viewkeys()
             new_coords_view = new_mapped.viewkeys()
-
             reportNewOrRemovedIDs(old_coords_view, new_coords_view)
 
-            packed_diffs = []  # idx, properties_diff, geo_diff
+            packed_diffs = []  # idx, properties_diff, geo_diff, type_change
             type_change_count = 0
             for common_feature_id in old_coords_view & new_coords_view:  # already in sorted order
 
@@ -191,10 +185,8 @@ if __name__ == "__main__":
                         else:
                             type_change = False;
 
-
                     properties_diff = list(
                         diff(old['properties'], new['properties']))
-
                     packed_diffs.append(
                         (common_feature_id, properties_diff, geo_diff, type_change))
 
