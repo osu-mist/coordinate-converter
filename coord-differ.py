@@ -47,7 +47,7 @@ def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
     new_ids, removed_ids = diff_viewkeys(old_coords_view, new_coords_view)
 
     print "====================================="
-    print "New or missing id's"
+    print "\nNew or missing id's"
     print "# of new features: {}".format(len(new_ids))
     print "# of removed features: {}".format(len(removed_ids))
     if(new_ids):
@@ -58,7 +58,7 @@ def reportNewOrRemovedIDs(old_coords_view, new_coords_view):
         print "-------------------------------------"
         print "Deprecated feature ids:"
         print removed_ids
-    print "====================================="
+    print "\n====================================="
 
 
 def reportIndivDiffs(packed_diffs):
@@ -193,7 +193,7 @@ if __name__ == "__main__":
             if(type_change_count):
                 print "{} id's have changed geometry types".format(type_change_count)
 
-            print "====================================="
             print "Reporting common ids diffs"
+            print "{} ids have differences.".format(len(old_coords_view & new_coords_view))
             print "====================================="
             reportIndivDiffs(packed_diffs)
