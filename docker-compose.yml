@@ -10,7 +10,7 @@ services:
     command: go build -v
     network_mode: "host"
   cs2cs:
-    image: "osgeo/proj.4"
+    image: "osgeo/proj"
     depends_on:
       - go
     environment:
