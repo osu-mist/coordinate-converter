@@ -138,8 +138,8 @@ if __name__ == "__main__":
         sys.exit(1)
     else:
         with open(args['<old_data_path>'], "r") as old_json_file, open(args['<new_data_path>'], "r") as new_json_file:
-            old_coords = json.loads(new_json_file.read())
-            new_coords = json.loads(old_json_file.read())
+            old_coords = json.loads(old_json_file.read())
+            new_coords = json.loads(new_json_file.read())
 
         try:
             geo_differ = argparse_lambda_for_geo_differ()
