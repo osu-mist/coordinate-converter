@@ -53,29 +53,31 @@ func check(e error) {
 Converts a set of coordinates using cs2cs. http://proj4.org/apps/cs2cs.html
 */
 func convertCoordinates(lon, lat float64) (float64, float64) {
-	// The coordinates are floats, so we must convert them into strings to include them in the cs2cs command
-	lonStr := strconv.FormatFloat(lon, 'f', -1, 64)
-	latStr := strconv.FormatFloat(lat, 'f', -1, 64)
+	if (-180 <= lon && lon <= 180) && (-90 <= lat && lat <= 90) {
+		return lon, lat
+	} else {
+		// The coordinates are floats, so we must convert them into strings to include them in the cs2cs command
+		lonStr := strconv.FormatFloat(lon, 'f', -1, 64)
+		latStr := strconv.FormatFloat(lat, 'f', -1, 64)
+		var cs2csProjection string
 
-	var cs2csProjection string
+		cs2csProjection = "+proj=lcc +lat_1=46 +lat_2=44.33333333333334 +lat_0=43.66666666666666 +lon_0=-120.5 +x_0=2500000.0001424 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=ft +no_defs"
 
-	cs2csProjection = "+proj=lcc +lat_1=46 +lat_2=44.33333333333334 +lat_0=43.66666666666666 +lon_0=-120.5 +x_0=2500000.0001424 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=ft +no_defs"
+		cs2csCommand := "echo \"" + lonStr + " " + latStr + "\" | cs2cs -f %8.6f " + cs2csProjection + " +to +proj=longlat +datum=WGS84 +no_defs"
+		cmd := exec.Command("sh", "-c", cs2csCommand)
+		stdoutStderr, err := cmd.CombinedOutput()
+		check(err)
 
-	cs2csCommand := "echo \"" + lonStr + " " + latStr + "\" | cs2cs -f %8.6f " + cs2csProjection + " +to +proj=longlat +datum=WGS84 +no_defs"
-	cmd := exec.Command("sh", "-c", cs2csCommand)
-	stdoutStderr, err := cmd.CombinedOutput()
-	check(err)
+		// Cs2cs outputs coordinates separated by random amounts of whitespace, with a 0 value at the end.
+		// strings.Fields parses the 3 numbers so we can use them individually (and ignore the unneeded 0).
+		parsedOutput := strings.Fields(string(stdoutStderr[:]))
 
-	// Cs2cs outputs coordinates separated by random amounts of whitespace, with a 0 value at the end.
-	// strings.Fields parses the 3 numbers so we can use them individually (and ignore the unneeded 0).
-	parsedOutput := strings.Fields(string(stdoutStderr[:]))
-
-	convertedLon, err := strconv.ParseFloat(parsedOutput[0], 64)
-	check(err)
-	convertedLat, err := strconv.ParseFloat(parsedOutput[1], 64)
-	check(err)
-
-	return convertedLon, convertedLat
+		convertedLon, err := strconv.ParseFloat(parsedOutput[0], 64)
+		check(err)
+		convertedLat, err := strconv.ParseFloat(parsedOutput[1], 64)
+		check(err)
+		return convertedLon, convertedLat
+	}
 }
 
 /*
