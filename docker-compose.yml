@@ -5,7 +5,7 @@ services:
     build: .
     image: go-coordinate-converter
     volumes:
-      - $PWD:/go/src/github.com/osu-mist/coordinate-converter
+      - "${WORKSPACE_PATH/\/var\/jenkins_home\//"$DOCKER_VOLUME_PATH"}":/go/src/github.com/osu-mist/coordinate-converter
     working_dir: /go/src/github.com/osu-mist/coordinate-converter
     command: go build -v
     network_mode: "host"
@@ -16,7 +16,7 @@ services:
     environment:
       - URL
     volumes:
-      - $PWD:/tmp
+      - "${WORKSPACE_PATH/\/var\/jenkins_home\//"$DOCKER_VOLUME_PATH"}":/tmp
     working_dir: /tmp
     command: sh -c /tmp/run.sh
     network_mode: "host"
